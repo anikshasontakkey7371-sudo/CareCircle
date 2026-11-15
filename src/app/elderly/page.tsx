@@ -4,21 +4,27 @@ import React, { useEffect, useState } from "react";
 import { DoseLog, Medication } from "@/types";
 import { DoseActionCard } from "@/components/elderly/DoseActionCard";
 import { EmergencyCallCard } from "@/components/elderly/EmergencyCallCard";
-import { getTimeOfDay, getTimeOfDayLabel, TimeOfDay } from "@/lib/utils/adherence";
-import { Sparkles, CheckCircle2, Clock, Volume2 } from "lucide-react";
+import {
+  getTimeOfDay,
+  getTimeOfDayLabel,
+  TimeOfDay,
+  formatIndianDate,
+} from "@/lib/utils/adherence";
+import { CheckCircle2, Volume2, ShieldCheck } from "lucide-react";
 import { soundManager } from "@/lib/audio/chimes";
 
 export default function ElderlyPage() {
   const [doses, setDoses] = useState<DoseLog[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [loading, setLoading] = useState(true);
-  const [seniorName, setSeniorName] = useState("Eleanor Vance");
+  const [seniorName, setSeniorName] = useState("Asha Sharma");
 
   const fetchDoses = async () => {
     try {
-      const [dosesRes, medsRes] = await Promise.all([
+      const [dosesRes, medsRes, circleRes] = await Promise.all([
         fetch("/api/doses"),
         fetch("/api/medications"),
+        fetch("/api/circle"),
       ]);
 
       if (dosesRes.ok) {
@@ -28,6 +34,12 @@ export default function ElderlyPage() {
       if (medsRes.ok) {
         const data = await medsRes.json();
         setMedications(data.medications || []);
+      }
+      if (circleRes.ok) {
+        const data = await circleRes.json();
+        if (data.circle?.elderlyName) {
+          setSeniorName(data.circle.elderlyName);
+        }
       }
     } catch (err) {
       console.warn("Error loading elderly schedule:", err);
@@ -40,22 +52,26 @@ export default function ElderlyPage() {
     fetchDoses();
   }, []);
 
-  const handleStatusChange = async (logId: string, newStatus: "taken" | "skipped") => {
-    // Optimistic UI update
+  const handleStatusChange = async (
+    logId: string,
+    newStatus: "taken" | "skipped"
+  ) => {
+    // Immediate optimistic update
+    const nowIso = new Date().toISOString();
     setDoses((prev) =>
       prev.map((d) =>
         d.id === logId
           ? {
               ...d,
               status: newStatus,
-              loggedAt: new Date().toISOString(),
+              loggedAt: nowIso,
             }
           : d
       )
     );
 
     try {
-      await fetch("/api/doses", {
+      const res = await fetch("/api/doses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -64,9 +80,20 @@ export default function ElderlyPage() {
           loggedByRole: "elderly",
         }),
       });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.dose) {
+          // Synchronize with exact server-stored record
+          setDoses((prev) =>
+            prev.map((d) => (d.id === logId ? data.dose : d))
+          );
+        }
+      } else {
+        fetchDoses();
+      }
     } catch (err) {
       console.warn("Failed to persist dose update:", err);
-      // Re-fetch to sync
       fetchDoses();
     }
   };
@@ -76,16 +103,16 @@ export default function ElderlyPage() {
     const totalCount = doses.length;
     const pendingDoses = doses.filter((d) => d.status === "pending");
 
-    let speech = `Hello ${seniorName}. Today you have taken ${takenCount} of ${totalCount} scheduled medications. `;
+    let speech = `Namaste ${seniorName} ji. Today you have taken ${takenCount} of ${totalCount} scheduled medications. `;
     if (pendingDoses.length > 0) {
-      speech += `Your next dose is ${pendingDoses[0].medicationName} ${pendingDoses[0].dosage}.`;
+      speech += `Your next scheduled dose is ${pendingDoses[0].medicationName} ${pendingDoses[0].dosage}.`;
     } else {
-      speech += `All of your medications for today have been completed. Excellent work!`;
+      speech += `All of your medications for today have been completed. Excellent health care!`;
     }
     soundManager.speakText(speech);
   };
 
-  // Group doses into time of day
+  // Group doses into time of day periods
   const groupedDoses: Record<TimeOfDay, DoseLog[]> = {
     morning: [],
     afternoon: [],
@@ -111,14 +138,15 @@ export default function ElderlyPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-terracotta-700 block">
-              {new Date().toLocaleDateString(undefined, {
+              {new Date().toLocaleDateString("en-IN", {
                 weekday: "long",
-                month: "long",
                 day: "numeric",
-              })}
+                month: "long",
+                year: "numeric",
+              })} &bull; {formatIndianDate(new Date())}
             </span>
             <h1 className="text-3xl sm:text-4xl font-black text-charcoal-900 tracking-tight">
-              Good day, {seniorName.split(" ")[0]}!
+              Namaste, {seniorName.split(" ")[0]} Ji! (नमस्ते)
             </h1>
             <p className="text-base sm:text-lg font-bold text-charcoal-800">
               Here are your daily health routines and medication reminders.
@@ -129,10 +157,10 @@ export default function ElderlyPage() {
             type="button"
             onClick={handleReadFullDailySummary}
             className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-parchment-200 hover:bg-parchment-300 text-charcoal-900 font-extrabold text-sm sm:text-base border border-parchment-300 transition-colors self-start sm:self-center btn-tactile"
-            aria-label="Listen to daily medication summary"
+            aria-label="Listen to daily medication summary in audio"
           >
             <Volume2 className="w-5 h-5 text-terracotta-600" aria-hidden="true" />
-            <span>Listen to Summary</span>
+            <span>Listen to Summary (सुनिए)</span>
           </button>
         </div>
 
@@ -165,17 +193,13 @@ export default function ElderlyPage() {
           const { label, subtext } = getTimeOfDayLabel(period);
 
           return (
-            <section
-              key={period}
-              aria-label={label}
-              className="space-y-4"
-            >
+            <section key={period} aria-label={label} className="space-y-4">
               <div className="flex items-baseline justify-between border-b-2 border-parchment-300 pb-2">
                 <h2 className="text-2xl sm:text-3xl font-black text-charcoal-900">
                   {label}
                 </h2>
                 <span className="text-sm sm:text-base font-bold text-charcoal-800">
-                  {subtext}
+                  {subtext} (IST)
                 </span>
               </div>
 

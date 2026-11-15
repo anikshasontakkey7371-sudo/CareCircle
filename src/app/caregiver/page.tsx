@@ -63,7 +63,7 @@ export default function CaregiverPage() {
   const [apptAddress, setApptAddress] = useState("");
   const [apptDate, setApptDate] = useState("");
   const [apptTransport, setApptTransport] = useState(true);
-  const [apptEscort, setApptEscort] = useState("Sarah Vance");
+  const [apptEscort, setApptEscort] = useState("Priya Sharma (Daughter)");
 
   const loadAllData = async () => {
     try {
@@ -104,8 +104,12 @@ export default function CaregiverPage() {
   }, []);
 
   const handleSaveMedication = async (med: Partial<Medication>) => {
-    const res = await fetch("/api/medications", {
-      method: "POST",
+    const isEdit = Boolean(med.id);
+    const endpoint = isEdit ? `/api/medications/${med.id}` : "/api/medications";
+    const method = isEdit ? "PUT" : "POST";
+
+    const res = await fetch(endpoint, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(med),
     });
@@ -221,7 +225,7 @@ export default function CaregiverPage() {
             <span>Authorized Care Circle Dashboard</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-charcoal-900 tracking-tight mt-1">
-            Care for {circle?.elderlyName || "Eleanor Vance"}
+            Care for {circle?.elderlyName || "Asha Sharma"}
           </h1>
           <p className="text-sm font-semibold text-charcoal-800 mt-1">
             Primary Contact: {circle?.emergencyPhone} &bull; {circle?.emergencyNotes}
@@ -705,3 +709,4 @@ export default function CaregiverPage() {
     </div>
   );
 }
+

@@ -44,3 +44,4 @@ describe("Senior Passcode & Authentication Utilities", () => {
     expect(verifyPasscode("123456", "invalid-hex", "salt")).toBe(false);
   });
 });
+

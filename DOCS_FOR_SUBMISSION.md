@@ -53,3 +53,4 @@ Check out our repository and architecture here:
 5. **Slide 5: Live Demo & Key Differentiators**: Zero-friction 6-digit passcode, WCAG AAA contrast, tactile Web Audio feedback, idempotent email alerts.
 6. **Slide 6: Verification & Automated Code Assessment**: 18 passing unit & accessibility tests, 100% TypeScript strict adherence, zero hardcoded secrets.
 7. **Slide 7: Roadmap & Future Vision**: Wearable integration (Fitbit/Pixel Watch), voice assistant smart speaker skill, and pharmacy refill API integration.
+

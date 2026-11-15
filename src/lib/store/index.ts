@@ -6,30 +6,36 @@ import {
   ActivityAuditLog,
   AdherenceMetrics,
 } from "@/types";
-import { calculateAdherenceMetrics } from "../utils/adherence";
+import { calculateAdherenceMetrics, getLocalDateString } from "../utils/adherence";
 import { hashPasscode, generateSalt } from "../utils/passcode";
 import { isFirebaseAdminConfigured, adminDb } from "../firebase/admin";
 
-// Realistic pre-seeded CareCircle data
-const DEMO_SENIOR_ID = "eleanor-vance-78";
-const DEMO_CIRCLE_ID = "circle-vance-901";
-const DEMO_PIN = "482915";
-const DEMO_SALT = "a4f89d93e120bc764d8a192837465abc";
-const DEMO_PIN_HASH = hashPasscode(DEMO_PIN, DEMO_SALT);
+// Realistic Indian Demo Data for CareCircle
+export const DEMO_SENIOR_ID = "asha-sharma-76";
+export const DEMO_CIRCLE_ID = "circle-sharma-901";
+export const DEMO_PIN = "482915";
+export const DEMO_SALT = "a4f89d93e120bc764d8a192837465abc";
+export const DEMO_PIN_HASH = hashPasscode(DEMO_PIN, DEMO_SALT);
+
+// Default Indian Demonstration Location: Nagpur, Maharashtra
+export const DEMO_HOME_ADDRESS =
+  "Flat 402, Shanti Heights, Ramdaspeth, Nagpur, Maharashtra 440010";
 
 let inMemoryCircle: CareCircle = {
   id: DEMO_CIRCLE_ID,
   elderlyUserId: DEMO_SENIOR_ID,
-  elderlyName: "Eleanor Vance",
+  elderlyName: "Asha Sharma",
   passcodeHash: DEMO_PIN_HASH,
   passcodeSalt: DEMO_SALT,
-  emergencyPhone: "+1 (555) 234-5678",
-  emergencyNotes: "Type 2 Diabetes, Mild Hypertension. Allergic to Penicillin.",
+  emergencyPhone: "+91 98220 12345",
+  emergencyNotes:
+    "Type 2 Diabetes, Mild Hypertension. Allergic to Penicillin. Address: " +
+    DEMO_HOME_ADDRESS,
   members: [
     {
-      userId: "user-sarah-1",
-      displayName: "Sarah Vance",
-      email: "sarah.vance@example.com",
+      userId: "user-priya-1",
+      displayName: "Priya Sharma",
+      email: "priya.sharma@example.com",
       relationship: "primary_caregiver",
       permissions: [
         "view_meds",
@@ -39,29 +45,29 @@ let inMemoryCircle: CareCircle = {
         "receive_alerts",
       ],
       status: "active",
-      joinedAt: "2026-01-10T09:00:00Z",
+      joinedAt: "2026-01-10T09:00:00+05:30",
     },
     {
-      userId: "user-david-2",
-      displayName: "David Vance",
-      email: "david.vance@example.com",
+      userId: "user-rahul-2",
+      displayName: "Rahul Sharma",
+      email: "rahul.sharma@example.com",
       relationship: "family",
       permissions: ["view_meds", "view_reports", "receive_alerts"],
       status: "active",
-      joinedAt: "2026-02-14T11:00:00Z",
+      joinedAt: "2026-02-14T11:00:00+05:30",
     },
     {
-      userId: "user-nurse-rachel",
-      displayName: "Nurse Rachel Miller, RN",
-      email: "rachel.miller@springfieldcare.org",
+      userId: "user-nurse-ananya",
+      displayName: "Ananya Deshmukh, RN",
+      email: "ananya.deshmukh@nagpurcare.example.com",
       relationship: "nurse",
       permissions: ["view_meds", "log_meds", "view_reports"],
       status: "active",
-      joinedAt: "2026-03-01T08:30:00Z",
+      joinedAt: "2026-03-01T08:30:00+05:30",
     },
   ],
-  createdAt: "2026-01-01T00:00:00Z",
-  updatedAt: "2026-11-15T08:00:00Z",
+  createdAt: "2026-01-01T00:00:00+05:30",
+  updatedAt: "2026-11-15T08:00:00+05:30",
 };
 
 let inMemoryMedications: Medication[] = [
@@ -71,16 +77,17 @@ let inMemoryMedications: Medication[] = [
     name: "Metformin",
     dosage: "500 mg",
     unit: "Tablet",
-    instructions: "Take 1 tablet with water immediately after breakfast and dinner",
-    doctorName: "Dr. Gregory House, Endocrinologist",
+    instructions:
+      "Take 1 tablet with water immediately after breakfast and dinner",
+    doctorName: "Dr. Sunita Rao, Endocrinologist",
     times: ["08:00", "20:00"],
     colorCode: "#C85A32",
     pillShape: "tablet",
     currentStock: 42,
     refillAlertThreshold: 10,
     isActive: true,
-    createdAt: "2026-01-10T10:00:00Z",
-    updatedAt: "2026-11-15T08:00:00Z",
+    createdAt: "2026-01-10T10:00:00+05:30",
+    updatedAt: "2026-11-15T08:00:00+05:30",
   },
   {
     id: "med-lisinopril-2",
@@ -89,15 +96,15 @@ let inMemoryMedications: Medication[] = [
     dosage: "10 mg",
     unit: "Tablet",
     instructions: "Take 1 tablet in the morning with a full glass of water",
-    doctorName: "Dr. Sarah Jenkins, Cardiologist",
+    doctorName: "Dr. Rajesh Kulkarni, Cardiologist",
     times: ["08:00"],
     colorCode: "#2D5A46",
     pillShape: "round",
     currentStock: 28,
     refillAlertThreshold: 7,
     isActive: true,
-    createdAt: "2026-01-10T10:00:00Z",
-    updatedAt: "2026-11-15T08:00:00Z",
+    createdAt: "2026-01-10T10:00:00+05:30",
+    updatedAt: "2026-11-15T08:00:00+05:30",
   },
   {
     id: "med-atorvastatin-3",
@@ -105,73 +112,76 @@ let inMemoryMedications: Medication[] = [
     name: "Atorvastatin",
     dosage: "20 mg",
     unit: "Tablet",
-    instructions: "Take 1 tablet in the evening before bed",
-    doctorName: "Dr. Sarah Jenkins, Cardiologist",
+    instructions: "Take 1 tablet at bedtime with water",
+    doctorName: "Dr. Rajesh Kulkarni, Cardiologist",
     times: ["21:00"],
     colorCode: "#D99B26",
     pillShape: "oval",
     currentStock: 18,
     refillAlertThreshold: 7,
     isActive: true,
-    createdAt: "2026-01-10T10:00:00Z",
-    updatedAt: "2026-11-15T08:00:00Z",
+    createdAt: "2026-01-10T10:00:00+05:30",
+    updatedAt: "2026-11-15T08:00:00+05:30",
   },
 ];
 
-// Today's date string YYYY-MM-DD
-const todayStr = new Date().toISOString().split("T")[0];
+// Local calendar day in Asia/Kolkata
+const todayLocalStr = getLocalDateString(new Date());
 
+// Seeded today's doses using the EXACT deterministic ID format to prevent duplication
 let inMemoryDoses: DoseLog[] = [
   {
-    id: `dose-metformin-morning-${todayStr}`,
+    id: `dose-med-metformin-1-${todayLocalStr}-08-00`,
     elderlyUserId: DEMO_SENIOR_ID,
     medicationId: "med-metformin-1",
     medicationName: "Metformin",
     dosage: "500 mg",
-    scheduledTime: `${todayStr}T08:00:00`,
+    scheduledTime: `${todayLocalStr}T08:00:00`,
     status: "taken",
-    loggedAt: `${todayStr}T08:12:00Z`,
+    loggedAt: `${todayLocalStr}T08:15:00+05:30`,
     loggedBy: {
       userId: DEMO_SENIOR_ID,
-      name: "Eleanor Vance",
+      name: "Asha Sharma",
       role: "elderly",
     },
     reminderSent: true,
+    missedAlertSent: false,
   },
   {
-    id: `dose-lisinopril-morning-${todayStr}`,
+    id: `dose-med-lisinopril-2-${todayLocalStr}-08-00`,
     elderlyUserId: DEMO_SENIOR_ID,
     medicationId: "med-lisinopril-2",
     medicationName: "Lisinopril",
     dosage: "10 mg",
-    scheduledTime: `${todayStr}T08:00:00`,
+    scheduledTime: `${todayLocalStr}T08:00:00`,
     status: "taken",
-    loggedAt: `${todayStr}T08:14:00Z`,
+    loggedAt: `${todayLocalStr}T08:18:00+05:30`,
     loggedBy: {
       userId: DEMO_SENIOR_ID,
-      name: "Eleanor Vance",
+      name: "Asha Sharma",
       role: "elderly",
     },
     reminderSent: true,
+    missedAlertSent: false,
   },
   {
-    id: `dose-metformin-evening-${todayStr}`,
+    id: `dose-med-metformin-1-${todayLocalStr}-20-00`,
     elderlyUserId: DEMO_SENIOR_ID,
     medicationId: "med-metformin-1",
     medicationName: "Metformin",
     dosage: "500 mg",
-    scheduledTime: `${todayStr}T20:00:00`,
+    scheduledTime: `${todayLocalStr}T20:00:00`,
     status: "pending",
     reminderSent: false,
     missedAlertSent: false,
   },
   {
-    id: `dose-atorvastatin-night-${todayStr}`,
+    id: `dose-med-atorvastatin-3-${todayLocalStr}-21-00`,
     elderlyUserId: DEMO_SENIOR_ID,
     medicationId: "med-atorvastatin-3",
     medicationName: "Atorvastatin",
     dosage: "20 mg",
-    scheduledTime: `${todayStr}T21:00:00`,
+    scheduledTime: `${todayLocalStr}T21:00:00`,
     status: "pending",
     reminderSent: false,
     missedAlertSent: false,
@@ -182,30 +192,31 @@ let inMemoryAppointments: Appointment[] = [
   {
     id: "appt-cardiology-1",
     elderlyUserId: DEMO_SENIOR_ID,
-    title: "Cardiologist Blood Pressure & EKG Follow-up",
-    doctorName: "Dr. Sarah Jenkins",
-    clinicAddress: "Springfield General Hospital, Suite 402, Medical Wing",
+    title: "Cardiologist Blood Pressure & ECG Follow-up",
+    doctorName: "Dr. Rajesh Kulkarni",
+    clinicAddress: "Nagpur City Care Hospital, Medical Square, Nagpur 440003",
     dateTime: "2026-11-20T10:30:00",
     transportationRequired: true,
-    accompaniedBy: "Sarah Vance (Daughter)",
-    notes: "Bring current medication log and recent BP readings.",
+    accompaniedBy: "Priya Sharma (Daughter)",
+    notes:
+      "Bring current medication adherence chart and last 2 weeks BP readings.",
     status: "upcoming",
     reminderSent: false,
-    createdAt: "2026-11-01T12:00:00Z",
+    createdAt: "2026-11-01T12:00:00+05:30",
   },
   {
     id: "appt-eye-2",
     elderlyUserId: DEMO_SENIOR_ID,
-    title: "Annual Diabetic Retinopathy Eye Exam",
-    doctorName: "Dr. Robert Chen, OD",
-    clinicAddress: "Evergreen Eye Institute, 120 Oak Lane",
+    title: "Annual Diabetic Retinopathy Eye Checkup",
+    doctorName: "Dr. Amit Joshi, MS (Ophthalmology)",
+    clinicAddress: "Drishti Eye & Retina Center, Dharampeth, Nagpur 440010",
     dateTime: "2026-12-05T14:00:00",
     transportationRequired: true,
-    accompaniedBy: "David Vance (Son)",
-    notes: "Eyes will be dilated; driver required for return trip.",
+    accompaniedBy: "Rahul Sharma (Son)",
+    notes: "Eye drops will be administered; driver required for return trip.",
     status: "upcoming",
     reminderSent: false,
-    createdAt: "2026-11-05T15:00:00Z",
+    createdAt: "2026-11-05T15:00:00+05:30",
   },
 ];
 
@@ -215,35 +226,43 @@ let inMemoryAuditLogs: ActivityAuditLog[] = [
     elderlyUserId: DEMO_SENIOR_ID,
     circleId: DEMO_CIRCLE_ID,
     actorId: DEMO_SENIOR_ID,
-    actorName: "Eleanor Vance",
+    actorName: "Asha Sharma",
     action: "DOSE_TAKEN",
-    details: { medicationName: "Metformin", dosage: "500 mg", period: "Morning" },
-    timestamp: `${todayStr}T08:12:00Z`,
+    details: {
+      medicationName: "Metformin",
+      dosage: "500 mg",
+      period: "Morning Routine",
+    },
+    timestamp: `${todayLocalStr}T08:15:00+05:30`,
   },
   {
     id: "audit-2",
     elderlyUserId: DEMO_SENIOR_ID,
     circleId: DEMO_CIRCLE_ID,
     actorId: DEMO_SENIOR_ID,
-    actorName: "Eleanor Vance",
+    actorName: "Asha Sharma",
     action: "DOSE_TAKEN",
-    details: { medicationName: "Lisinopril", dosage: "10 mg", period: "Morning" },
-    timestamp: `${todayStr}T08:14:00Z`,
+    details: {
+      medicationName: "Lisinopril",
+      dosage: "10 mg",
+      period: "Morning Routine",
+    },
+    timestamp: `${todayLocalStr}T08:18:00+05:30`,
   },
   {
     id: "audit-3",
     elderlyUserId: DEMO_SENIOR_ID,
     circleId: DEMO_CIRCLE_ID,
-    actorId: "user-sarah-1",
-    actorName: "Sarah Vance",
+    actorId: "user-priya-1",
+    actorName: "Priya Sharma",
     action: "PASSCODE_VERIFIED",
-    details: { channel: "Senior Tablet Login" },
-    timestamp: `${todayStr}T07:45:00Z`,
+    details: { channel: "Senior Tablet Sign-in" },
+    timestamp: `${todayLocalStr}T07:45:00+05:30`,
   },
 ];
 
 /**
- * CareCircle Repository
+ * CareCircle Repository with Full Firestore + In-Memory Fallback
  */
 export const CareCircleRepository = {
   getCircle: async (circleId: string = DEMO_CIRCLE_ID): Promise<CareCircle> => {
@@ -251,7 +270,9 @@ export const CareCircleRepository = {
       try {
         const snap = await adminDb.collection("care_circles").doc(circleId).get();
         if (snap.exists) return snap.data() as CareCircle;
-      } catch {}
+      } catch (err) {
+        console.warn("Firestore getCircle error:", err);
+      }
     }
     return inMemoryCircle;
   },
@@ -268,15 +289,19 @@ export const CareCircleRepository = {
 
     if (isFirebaseAdminConfigured() && adminDb) {
       try {
-        await adminDb.collection("care_circles").doc(circleId).update({
-          passcodeHash: hash,
-          passcodeSalt: salt,
-          updatedAt: inMemoryCircle.updatedAt,
-        });
-      } catch {}
+        await adminDb.collection("care_circles").doc(circleId).set(
+          {
+            passcodeHash: hash,
+            passcodeSalt: salt,
+            updatedAt: inMemoryCircle.updatedAt,
+          },
+          { merge: true }
+        );
+      } catch (err) {
+        console.warn("Firestore updatePasscode error:", err);
+      }
     }
 
-    // Add audit log
     await CareCircleRepository.addAuditLog({
       elderlyUserId: inMemoryCircle.elderlyUserId,
       circleId,
@@ -298,11 +323,26 @@ export const CareCircleRepository = {
       displayName: email.split("@")[0],
       email,
       relationship: relationship as any,
-      permissions: ["view_meds", "view_reports", "receive_alerts"] as any,
+      permissions: [
+        "view_meds",
+        "view_reports",
+        "receive_alerts",
+      ] as any,
       status: "active" as const,
       joinedAt: new Date().toISOString(),
     };
     inMemoryCircle.members.push(newMember);
+
+    if (isFirebaseAdminConfigured() && adminDb) {
+      try {
+        await adminDb
+          .collection("care_circles")
+          .doc(inMemoryCircle.id)
+          .set({ members: inMemoryCircle.members }, { merge: true });
+      } catch (err) {
+        console.warn("Firestore addMember error:", err);
+      }
+    }
 
     await CareCircleRepository.addAuditLog({
       elderlyUserId: inMemoryCircle.elderlyUserId,
@@ -329,7 +369,9 @@ export const CareCircleRepository = {
         if (!snap.empty) {
           return snap.docs.map((doc) => doc.data() as Medication);
         }
-      } catch {}
+      } catch (err) {
+        console.warn("Firestore getMedications error:", err);
+      }
     }
     return inMemoryMedications.filter((m) => m.isActive);
   },
@@ -350,7 +392,7 @@ export const CareCircleRepository = {
       pillShape: med.pillShape || "tablet",
       currentStock: med.currentStock ?? 30,
       refillAlertThreshold: med.refillAlertThreshold ?? 7,
-      isActive: true,
+      isActive: med.isActive ?? true,
       createdAt: med.createdAt || now,
       updatedAt: now,
     };
@@ -364,8 +406,10 @@ export const CareCircleRepository = {
 
     if (isFirebaseAdminConfigured() && adminDb) {
       try {
-        await adminDb.collection("medications").doc(id).set(fullMed);
-      } catch {}
+        await adminDb.collection("medications").doc(id).set(fullMed, { merge: true });
+      } catch (err) {
+        console.warn("Firestore saveMedication error:", err);
+      }
     }
 
     await CareCircleRepository.addAuditLog({
@@ -384,6 +428,18 @@ export const CareCircleRepository = {
     if (med) {
       med.isActive = false;
       med.updatedAt = new Date().toISOString();
+
+      if (isFirebaseAdminConfigured() && adminDb) {
+        try {
+          await adminDb
+            .collection("medications")
+            .doc(medId)
+            .update({ isActive: false, updatedAt: med.updatedAt });
+        } catch (err) {
+          console.warn("Firestore deleteMedication error:", err);
+        }
+      }
+
       await CareCircleRepository.addAuditLog({
         elderlyUserId: med.elderlyUserId,
         actorId: "caregiver-admin",
@@ -396,31 +452,79 @@ export const CareCircleRepository = {
     return false;
   },
 
+  /**
+   * Generates and returns scheduled doses for today with ZERO DUPLICATION.
+   * Ensures deterministic matching by medId and time.
+   */
   getDosesForToday: async (
     elderlyUserId: string = DEMO_SENIOR_ID
   ): Promise<DoseLog[]> => {
-    // Generate any missing scheduled doses for today deterministically
+    const today = getLocalDateString(new Date());
+
+    // 1. Try reading live Firestore doses if configured
+    if (isFirebaseAdminConfigured() && adminDb) {
+      try {
+        const snap = await adminDb
+          .collection("dose_logs")
+          .where("elderlyUserId", "==", elderlyUserId)
+          .where("scheduledTime", ">=", `${today}T00:00:00`)
+          .where("scheduledTime", "<=", `${today}T23:59:59`)
+          .get();
+
+        if (!snap.empty) {
+          return snap.docs.map((doc) => doc.data() as DoseLog);
+        }
+      } catch (err) {
+        console.warn("Firestore getDosesForToday error:", err);
+      }
+    }
+
+    // 2. Generate and ensure each scheduled medication occurrence exists exactly once
     const meds = await CareCircleRepository.getMedications(elderlyUserId);
+    const existingDoseMap = new Map<string, DoseLog>();
+
+    // Index all existing doses for today
+    for (const dose of inMemoryDoses) {
+      if (dose.elderlyUserId === elderlyUserId && dose.scheduledTime.startsWith(today)) {
+        const key = `${dose.medicationId}_${dose.scheduledTime.substring(0, 16)}`;
+        existingDoseMap.set(key, dose);
+      }
+    }
+
     for (const med of meds) {
       for (const time of med.times) {
-        const doseId = `dose-${med.id}-${todayStr}-${time.replace(":", "-")}`;
-        const existing = inMemoryDoses.find((d) => d.id === doseId);
-        if (!existing) {
-          inMemoryDoses.push({
-            id: doseId,
-            elderlyUserId,
-            medicationId: med.id,
-            medicationName: med.name,
-            dosage: med.dosage,
-            scheduledTime: `${todayStr}T${time}:00`,
-            status: "pending",
-            reminderSent: false,
-            missedAlertSent: false,
-          });
+        const scheduledTimeStr = `${today}T${time}:00`;
+        const key = `${med.id}_${today}T${time}`;
+
+        if (!existingDoseMap.has(key)) {
+          const doseId = `dose-${med.id}-${today}-${time.replace(":", "-")}`;
+          // Also double-check doseId doesn't exist
+          const existingById = inMemoryDoses.find((d) => d.id === doseId);
+          if (existingById) {
+            existingDoseMap.set(key, existingById);
+          } else {
+            const newDose: DoseLog = {
+              id: doseId,
+              elderlyUserId,
+              medicationId: med.id,
+              medicationName: med.name,
+              dosage: med.dosage,
+              scheduledTime: scheduledTimeStr,
+              status: "pending",
+              reminderSent: false,
+              missedAlertSent: false,
+            };
+            inMemoryDoses.push(newDose);
+            existingDoseMap.set(key, newDose);
+          }
         }
       }
     }
-    return inMemoryDoses.filter((d) => d.elderlyUserId === elderlyUserId);
+
+    // Return deduplicated list sorted by scheduled time
+    return Array.from(existingDoseMap.values()).sort((a, b) =>
+      a.scheduledTime.localeCompare(b.scheduledTime)
+    );
   },
 
   updateDoseStatus: async (
@@ -440,7 +544,7 @@ export const CareCircleRepository = {
       role: loggedByRole,
     };
 
-    // If dose was taken, decrement pill stock
+    // Decrement stock upon successful dose taken
     if (status === "taken") {
       const med = inMemoryMedications.find((m) => m.id === dose.medicationId);
       if (med && med.currentStock > 0) {
@@ -451,7 +555,9 @@ export const CareCircleRepository = {
     if (isFirebaseAdminConfigured() && adminDb) {
       try {
         await adminDb.collection("dose_logs").doc(logId).set(dose, { merge: true });
-      } catch {}
+      } catch (err) {
+        console.warn("Firestore updateDoseStatus error:", err);
+      }
     }
 
     await CareCircleRepository.addAuditLog({
@@ -479,6 +585,19 @@ export const CareCircleRepository = {
   getAppointments: async (
     elderlyUserId: string = DEMO_SENIOR_ID
   ): Promise<Appointment[]> => {
+    if (isFirebaseAdminConfigured() && adminDb) {
+      try {
+        const snap = await adminDb
+          .collection("appointments")
+          .where("elderlyUserId", "==", elderlyUserId)
+          .get();
+        if (!snap.empty) {
+          return snap.docs.map((doc) => doc.data() as Appointment);
+        }
+      } catch (err) {
+        console.warn("Firestore getAppointments error:", err);
+      }
+    }
     return inMemoryAppointments.filter((a) => a.elderlyUserId === elderlyUserId);
   },
 
@@ -489,7 +608,7 @@ export const CareCircleRepository = {
     const fullAppt: Appointment = {
       id,
       elderlyUserId: appt.elderlyUserId || DEMO_SENIOR_ID,
-      title: appt.title || "Medical Appointment",
+      title: appt.title || "Doctor Appointment",
       doctorName: appt.doctorName || "",
       clinicAddress: appt.clinicAddress || "",
       dateTime: appt.dateTime || new Date().toISOString(),
@@ -502,6 +621,14 @@ export const CareCircleRepository = {
     };
 
     inMemoryAppointments.push(fullAppt);
+
+    if (isFirebaseAdminConfigured() && adminDb) {
+      try {
+        await adminDb.collection("appointments").doc(id).set(fullAppt, { merge: true });
+      } catch (err) {
+        console.warn("Firestore saveAppointment error:", err);
+      }
+    }
 
     await CareCircleRepository.addAuditLog({
       elderlyUserId: fullAppt.elderlyUserId,
@@ -517,6 +644,21 @@ export const CareCircleRepository = {
   getAuditLogs: async (
     elderlyUserId: string = DEMO_SENIOR_ID
   ): Promise<ActivityAuditLog[]> => {
+    if (isFirebaseAdminConfigured() && adminDb) {
+      try {
+        const snap = await adminDb
+          .collection("activity_audit_logs")
+          .where("elderlyUserId", "==", elderlyUserId)
+          .orderBy("timestamp", "desc")
+          .limit(50)
+          .get();
+        if (!snap.empty) {
+          return snap.docs.map((doc) => doc.data() as ActivityAuditLog);
+        }
+      } catch (err) {
+        console.warn("Firestore getAuditLogs error:", err);
+      }
+    }
     return [...inMemoryAuditLogs].reverse();
   },
 
@@ -529,6 +671,15 @@ export const CareCircleRepository = {
       timestamp: new Date().toISOString(),
     };
     inMemoryAuditLogs.push(entry);
+
+    if (isFirebaseAdminConfigured() && adminDb) {
+      try {
+        await adminDb.collection("activity_audit_logs").doc(entry.id).set(entry);
+      } catch (err) {
+        console.warn("Firestore addAuditLog error:", err);
+      }
+    }
+
     return entry;
   },
 };

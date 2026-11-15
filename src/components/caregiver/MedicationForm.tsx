@@ -192,11 +192,11 @@ export function MedicationForm({
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
-              Prescribing Physician (Optional)
+              Prescribing Physician (डॉक्टर का नाम)
             </label>
             <input
               type="text"
-              placeholder="e.g. Dr. Sarah Jenkins (Cardiology)"
+              placeholder="e.g. Dr. Rajesh Kulkarni (Cardiology, Nagpur)"
               value={doctorName}
               onChange={(e) => setDoctorName(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-parchment-300 font-medium text-charcoal-900 focus:ring-2 focus:ring-terracotta-500"
@@ -256,11 +256,10 @@ export function MedicationForm({
                   key={c.value}
                   type="button"
                   onClick={() => setColorCode(c.value)}
-                  className={`w-9 h-9 rounded-full border-2 transition-transform ${
-                    colorCode === c.value
+                  className={`w-9 h-9 rounded-full border-2 transition-transform ${colorCode === c.value
                       ? "scale-110 border-charcoal-900 shadow-md ring-2 ring-terracotta-400"
                       : "border-transparent opacity-80 hover:opacity-100"
-                  }`}
+                    }`}
                   style={{ backgroundColor: c.value }}
                   aria-label={`Color cue ${c.label}`}
                 />
@@ -323,3 +322,4 @@ export function MedicationForm({
     </div>
   );
 }
+

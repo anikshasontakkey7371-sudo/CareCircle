@@ -36,3 +36,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+# Local audit and backup files
+carecircle-audit.txt
+*.backup
+.env
+.env.local
+.env.*.local

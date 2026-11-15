@@ -52,3 +52,4 @@ function getAdminApp(): admin.app.App {
 export const adminApp = getAdminApp();
 export const adminAuth = adminApp ? admin.auth(adminApp) : null!;
 export const adminDb = adminApp ? admin.firestore(adminApp) : null!;
+

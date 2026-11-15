@@ -95,3 +95,4 @@ describe("CareCircle Data Layer & Business Logic", () => {
     expect(member?.permissions).toContain("view_meds");
   });
 });
+

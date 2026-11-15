@@ -28,7 +28,11 @@ export function DoseActionCard({
     try {
       if (timeStr.includes("T")) {
         const date = new Date(timeStr);
-        return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        return date.toLocaleTimeString("en-IN", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
       }
       const [h, m] = timeStr.split(":");
       const hour = parseInt(h, 10);
@@ -153,7 +157,7 @@ export function DoseActionCard({
           {isTaken && (
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-sage-600 text-white font-extrabold text-base shadow-sm">
               <Check className="w-5 h-5" aria-hidden="true" />
-              <span>Taken {dose.loggedAt ? `(${new Date(dose.loggedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })})` : "✓"}</span>
+              <span>Taken {dose.loggedAt ? `(${new Date(dose.loggedAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })})` : "✓"}</span>
             </div>
           )}
           {isMissed && (
@@ -199,3 +203,4 @@ export function DoseActionCard({
     </article>
   );
 }
+

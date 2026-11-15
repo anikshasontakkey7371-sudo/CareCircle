@@ -137,9 +137,12 @@ export interface ActivityAuditLog {
 
 export interface AdherenceMetrics {
   totalScheduled: number;
+  dueCount?: number;
+  upcomingCount?: number;
   taken: number;
   skipped: number;
   missed: number;
   pending: number;
   adherencePercentage: number;
 }
+
