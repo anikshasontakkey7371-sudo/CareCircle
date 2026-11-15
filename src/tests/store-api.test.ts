@@ -6,7 +6,7 @@ describe("CareCircle Data Layer & Business Logic", () => {
   it("should retrieve circle details and verify default demo passcode", async () => {
     const circle = await CareCircleRepository.getCircle();
     expect(circle).toBeDefined();
-    expect(circle.elderlyName).toBe("Eleanor Vance");
+    expect(circle.elderlyName).toBe("Asha Sharma");
 
     // Verify default passcode 482915 matches
     const isValid = verifyPasscode("482915", circle.passcodeHash, circle.passcodeSalt);
@@ -55,7 +55,7 @@ describe("CareCircle Data Layer & Business Logic", () => {
 
     const doses = await CareCircleRepository.getDosesForToday();
     const pendingDose = doses.find((d) => d.medicationName === "Metformin" && d.status === "pending");
-    
+
     if (pendingDose) {
       await CareCircleRepository.updateDoseStatus(pendingDose.id, "taken", "elderly");
       const updatedMeds = await CareCircleRepository.getMedications();
