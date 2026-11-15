@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-scale: 1;
+  --bg-primary: #FAF7F2;
+  --text-primary: #19241E;
+  --card-bg: #FFFFFF;
+  --border-color: #EAE2D8;
+}
+
+:root[data-font-size="large"] {
+  --font-scale: 1.2;
+  font-size: 19px;
+}
+
+:root[data-font-size="extra-large"] {
+  --font-scale: 1.4;
+  font-size: 22px;
+}
+
+:root.high-contrast {
+  --bg-primary: #FFFFFF;
+  --text-primary: #000000;
+  --card-bg: #FFFFFF;
+  --border-color: #000000;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessible focus styling for seniors and keyboard navigation */
+:focus-visible {
+  outline: 3px solid #C85A32 !important;
+  outline-offset: 3px !important;
+}
+
+/* High contrast mode overrides */
+.high-contrast button {
+  border: 2px solid #000000 !important;
+}
+
+.high-contrast .card-border {
+  border: 2px solid #000000 !important;
+}
+
+/* Tactile button pressed states */
+.btn-tactile:active {
+  transform: translateY(2px);
+}
